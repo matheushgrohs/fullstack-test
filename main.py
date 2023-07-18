@@ -1,154 +1,67 @@
-from datetime import datetime
-import requests
-import pandas as pd
-from flask import Flask, jsonify
+import csv
 
-def create_csv_archive():
-    packages = [
-    'numpy',
-    'pandas',
-    'matplotlib',
-    'scikit-learn',
-    'tensorflow',
-    'django',
-    'flask',
-    'requests',
-    'beautifulsoup4',
-    'pytest',
-    'pytorch',
-    'opencv-python',
-    'seaborn',
-    'plotly',
-    'pyyaml',
-    'tqdm',
-    'sqlalchemy',
-    'nltk',
-    'jupyter',
-    'pymongo',
-    'flask-restful',
-    'pyinstaller',
-    'wxpython',
-    'pillow',
-    'pyqt5',
-    'pydot',
-    'pylint',
-    'pygame',
-    'keras',
-    'cx-Freeze',
-    'fastapi',
-    'pyodbc',
-    'openpyxl',
-    'xlrd',
-    'xlwt',
-    'pyspark',
-    'paramiko',
-    'psycopg2',
-    'scipy',
-    'bokeh',
-    'statsmodels',
-    'dash',
-    'pytz',
-    'networkx',
-    'pymysql',
-    'pyserial',
-    'google-api-python-client',
-    'python-docx',
-    'pywin32',
-    'pycairo',
-    'pygments',
-    'pandasql',
-    'scrapy',
-    'pyarrow',
-    'torchvision',
-    'fasttext',
-    'xgboost',
-    'keras-tuner',
-    'gensim',
-    'pygraphviz',
-    'pycryptodome',
-    'fuzzywuzzy',
-    'redis',
-    'tweepy',
-    'pyspellchecker',
-    'imaplib',
-    'pydantic',
-    'selenium',
-    'pycurl',
-    'pdfminer.six',
-    'pyqrcode',
-    'weasyprint',
-    'pdfkit',
-    'python-telegram-bot',
-    'dash-bootstrap-components'
-    ]
+def load_data(filename):
+    data = []
+    with open(filename, 'r') as file:
+        reader = csv.reader(file)
+        next(reader) 
+        for row in reader:
+            data.append(row)
+    return data
 
-    packages_info = {
-        'Package name': [],
-        'Publicantion Data': [],
-        'Version of Python': [],
-        'Last month downloads': []
-    }
+def calculate_percentage_above_age_with_high_cholesterol(data, age_threshold):
+    total_above_age = 0
+    total_above_age_with_high_cholesterol = 0
 
-    for package in packages:
-        response = requests.get(f'https://pypi.org/pypi/{package}/json')
+    for person in data:
+        age = float(person[0])
+        cholesterol = float(person[4])
+        if age > age_threshold:
+            total_above_age += 1
+            if cholesterol > 240:
+                total_above_age_with_high_cholesterol += 1
 
-        if response.status_code == 200:
-            data= response.json()
+    percentage = (total_above_age_with_high_cholesterol / total_above_age) * 100
+    return percentage
 
-            packages_info['Package name'].append(package)
+def calculate_percentage_above_age_with_high_cholesterol_and_sugar(data, age_threshold):
+    total_above_age = 0
+    total_above_age_with_high_cholesterol_and_sugar = 0
 
-            #Date of most recent version     
-            releases = data['releases']       
-            latest_release_date = None
-            for date in releases.keys():
-                try:
-                    parsed_date = datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
-                    if not latest_release_date or parsed_date > latest_release_date:
-                        latest_release_date = parsed_date
-                except ValueError:
-                    pass
-                
-            if latest_release_date:
-                packages_info['Publicantion Data'].append(
-                    latest_release_date.strftime('%Y-%m-%d')
-                )
-            else:
-                last_upload_time = data['urls'][0]['upload_time']
-                latest_release_date = datetime.strptime(last_upload_time, '%Y-%m-%dT%H:%M:%S')
-                packages_info['Publicantion Data'].append(
-                    latest_release_date.strftime('%Y-%m-%d')
-                )
+    for person in data:
+        age = float(person[0])
+        cholesterol = float(person[4])
+        sugar = float(person[5])
+        if age > age_threshold:
+            total_above_age += 1
+            if cholesterol > 240 and sugar > 120:
+                total_above_age_with_high_cholesterol_and_sugar += 1
 
-            #Python Version
-            requires_python = data['info']['requires_python']
-            packages_info['Version of Python'].append(requires_python if requires_python else 'N/A')
+    percentage = (total_above_age_with_high_cholesterol_and_sugar / total_above_age) * 100
+    return percentage
 
-            #Last month downloads
-            last_month_downloads = sum([release['last_month'] for release in releases.values() if 'last_month' in release])
-            packages_info['Last month downloads'].append(last_month_downloads)
-        else: 
-            packages_info['Package name'].append(package)
-            packages_info['Publicantion Data'].append('N/A')
-            packages_info['Version of Python'].append('N/A')
-            packages_info['Last month downloads'].append('N/A')
-    
-    df = pd.DataFrame(packages_info)
-    df.to_csv('packages.csv', index=False)
+def is_related_to_left_ventricular_hypertrophy(data):
+    total_samples = len(data)
+    total_related = 0
 
+    for person in data:
+        cholesterol = float(person[4])
+        sugar = float(person[5])
+        heart_hypertrophy = float(person[6])
+        if cholesterol > 240 and sugar > 120 and heart_hypertrophy == 2:
+            total_related += 1
 
+    percentage = (total_related / total_samples) * 100
+    return percentage
 
-#API
+data = load_data('data.csv')
+age_threshold = 40
 
-app = Flask(__name__)
+cholesterol_percentage = calculate_percentage_above_age_with_high_cholesterol(data, age_threshold)
+print(f"A porcentagem de pessoas acima de {age_threshold} anos com colesterol alto é: {cholesterol_percentage:.2f}%")
 
-#Route GET returning list of packages and their information (http://localhost:5000/packages)
+cholesterol_sugar_percentage = calculate_percentage_above_age_with_high_cholesterol_and_sugar(data, age_threshold)
+print(f"A porcentagem de pessoas acima de {age_threshold} anos com colesterol alto e alto teor de açúcar é: {cholesterol_sugar_percentage:.2f}%")
 
-@app.route('/packages', methods=['GET'])
-def get_packages():
-    df = pd.read_csv('packages.csv')
-    packages = df.to_dict('records')
-    return jsonify(packages)
-
-if __name__ == '__main__':
-    create_csv_archive()
-    app.run()
+heart_hypertrophy_percentage = is_related_to_left_ventricular_hypertrophy(data)
+print(f"A porcentagem de pessoas com colesterol alto, alto teor de açúcar e hipertrofia ventricular esquerda é: {heart_hypertrophy_percentage:.2f}%")
